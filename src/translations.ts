@@ -1,0 +1,43 @@
+export const translations = {
+  en: {
+    play: '▶ PLAY',
+    bestScore: 'BEST SCORE',
+    howToPlay: 'HOW TO PLAY',
+    tip1: 'Drag blocks onto the 8×8 grid to place them',
+    tip2: 'Fill entire rows or columns to clear them',
+    tip3: 'Clear multiple lines at once for huge bonus points',
+    tip4: 'New blocks appear only when all 3 are placed',
+    tip5: 'Game ends when no block can fit anywhere',
+    undo: 'UNDO',
+    newGame: 'NEW GAME',
+    score: 'SCORE',
+    best: 'BEST',
+    gameOver: 'GAME OVER',
+    noMoves: 'No valid moves remain',
+    playAgain: '▶ Play Again',
+    menu: 'Menu',
+    newHighScore: '✦ NEW HIGH SCORE ✦',
+  },
+  ru: {
+    play: '▶ ИГРАТЬ',
+    bestScore: 'РЕКОРД',
+    howToPlay: 'ПРАВИЛА',
+    tip1: 'Перетаскивай блоки на сетку 8×8, чтобы разместить',
+    tip2: 'Заполняй целые строки или столбцы для очистки',
+    tip3: 'Очищай несколько линий сразу для большого бонуса',
+    tip4: 'Новые блоки появляются только когда все 3 размещены',
+    tip5: 'Игра заканчивается, когда ни один блок не помещается',
+    undo: 'ОТМЕНА',
+    newGame: 'НОВАЯ ИГРА',
+    score: 'СЧЁТ',
+    best: 'РЕКОРД',
+    gameOver: 'ИГРА ОКОНЧЕНА',
+    noMoves: 'Нет доступных ходов',
+    playAgain: '▶ ИГРАТЬ СНОВА',
+    menu: 'МЕНЮ',
+    newHighScore: '✦ НОВЫЙ РЕКОРД ✦',
+  },
+} as const;
+
+export type Lang = 'en' | 'ru';
+export type TranslationKey = keyof (typeof translations)['en'];
