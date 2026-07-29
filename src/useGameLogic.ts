@@ -1,83 +1,27 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { generateFigurePool, getShapeCells, ColorKey, ShapeMatrix } from './gameShapes';
+import { generateFigurePool, getShapeCells } from './gameShapes';
+import { useAudio } from './hooks/useAudio';
+import {
+  BOARD_SIZE,
+  Board,
+  Figure,
+  GameScreen,
+  ClearingCells,
+  createEmptyBoard,
+  canPlaceFigure,
+  canFigureFitAnywhere,
+  getLinesToClear,
+  clearLines,
+  calcScore,
+} from './gameEngine';
 
-export const BOARD_SIZE = 8;
+export type { Board, ClearingCells };
+export { BOARD_SIZE };
 
-export interface CellData {
-  colorKey: ColorKey;
-  figureId: string;
-}
-
-export type Board = (CellData | null)[][];
-
-export interface Figure {
-  id: string;
-  matrix: ShapeMatrix;
-  colorKey: ColorKey;
-}
-
-export type GameScreen = 'menu' | 'game' | 'gameover';
-
-export interface ClearingCells {
-  rows: Set<number>;
-  cols: Set<number>;
-}
-
-function createEmptyBoard(): Board {
-  return Array.from({ length: BOARD_SIZE }, () => Array(BOARD_SIZE).fill(null));
-}
-
-export function canPlaceFigure(board: Board, matrix: ShapeMatrix, boardRow: number, boardCol: number): boolean {
-  const cells = getShapeCells(matrix);
-  for (const [dr, dc] of cells) {
-    const r = boardRow + dr;
-    const c = boardCol + dc;
-    if (r < 0 || r >= BOARD_SIZE || c < 0 || c >= BOARD_SIZE) return false;
-    if (board[r][c] !== null) return false;
-  }
-  return true;
-}
-
-export function canFigureFitAnywhere(board: Board, matrix: ShapeMatrix): boolean {
-  for (let r = 0; r < BOARD_SIZE; r++) {
-    for (let c = 0; c < BOARD_SIZE; c++) {
-      if (canPlaceFigure(board, matrix, r, c)) return true;
-    }
-  }
-  return false;
-}
-
-function getLinesToClear(board: Board): { rows: number[]; cols: number[] } {
-  const rows: number[] = [];
-  const cols: number[] = [];
-  for (let r = 0; r < BOARD_SIZE; r++) {
-    if (board[r].every(cell => cell !== null)) rows.push(r);
-  }
-  for (let c = 0; c < BOARD_SIZE; c++) {
-    if (board.every(row => row[c] !== null)) cols.push(c);
-  }
-  return { rows, cols };
-}
-
-function clearLines(board: Board, rows: number[], cols: number[]): Board {
-  const newBoard = board.map(row => [...row]);
-  for (const r of rows) {
-    for (let c = 0; c < BOARD_SIZE; c++) newBoard[r][c] = null;
-  }
-  for (const c of cols) {
-    for (let r = 0; r < BOARD_SIZE; r++) newBoard[r][c] = null;
-  }
-  return newBoard;
-}
-
-function calcScore(rowsCleared: number, colsCleared: number, cellsPlaced: number): number {
-  const linesTotal = rowsCleared + colsCleared;
-  let base = cellsPlaced * 10;
-  if (linesTotal === 1) base += 80;
-  else if (linesTotal === 2) base += 200;
-  else if (linesTotal === 3) base += 400;
-  else if (linesTotal >= 4) base += 800 + (linesTotal - 4) * 200;
-  return base;
+interface PrevState {
+  board: Board;
+  pool: (Figure | null)[];
+  score: number;
 }
 
 export function useGameLogic() {
@@ -96,22 +40,20 @@ export function useGameLogic() {
     try { return localStorage.getItem('blockpuzzle_muted') === 'true'; } catch { return false; }
   });
 
-  // Keep mutable refs for use in async callbacks
+  // Audio hook
+  const { playPlace, playClear, playGameOver } = useAudio(muted);
+
+  // Mutable refs for async callbacks
   const boardRef = useRef<Board>(createEmptyBoard());
   const poolRef = useRef<(Figure | null)[]>([null, null, null]);
   const scoreRef = useRef(0);
   const isClearingRef = useRef(false);
+  const prevStateRef = useRef<PrevState | null>(null);
 
-  // FIX 1: added gameOverTimerRef
   const gameOverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  // FIX 2: added comboTimerRef
   const comboTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const clearTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const mutedRef = useRef(muted);
 
-  const audioCtx = useRef<AudioContext | null>(null);
-
-  // FIX 3: cleanup all timers on unmount
   useEffect(() => {
     return () => {
       if (clearTimerRef.current) clearTimeout(clearTimerRef.current);
@@ -120,58 +62,9 @@ export function useGameLogic() {
     };
   }, []);
 
-  // FIX 4: removed `mutedRef.current = muted` from render body
-  // It is now updated inside toggleMute
-
-  // ── Audio helpers ──
-  const getAudio = useCallback((): AudioContext | null => {
-    if (mutedRef.current) return null;
-    if (!audioCtx.current) {
-      try { audioCtx.current = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)(); } catch { return null; }
-    }
-    return audioCtx.current;
-  }, []);
-
-  const playTone = useCallback((freq: number, type: OscillatorType, duration: number, vol = 0.18, delay = 0) => {
-    const ctx = getAudio();
-    if (!ctx) return;
-    try {
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.type = type;
-      osc.frequency.setValueAtTime(freq, ctx.currentTime + delay);
-      gain.gain.setValueAtTime(vol, ctx.currentTime + delay);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + delay + duration);
-      osc.start(ctx.currentTime + delay);
-      osc.stop(ctx.currentTime + delay + duration);
-    } catch { /* silent */ }
-  }, [getAudio]);
-
-  const playPlace = useCallback(() => {
-    playTone(280, 'sine', 0.1, 0.15);
-    playTone(380, 'sine', 0.07, 0.1, 0.05);
-  }, [playTone]);
-
-  const playClear = useCallback((lines: number) => {
-    const base = lines >= 3 ? 660 : lines === 2 ? 550 : 440;
-    playTone(base, 'sine', 0.25, 0.25);
-    playTone(base * 1.5, 'sine', 0.2, 0.2, 0.1);
-    if (lines >= 2) playTone(base * 2, 'sine', 0.18, 0.18, 0.2);
-    if (lines >= 3) playTone(base * 2.5, 'triangle', 0.15, 0.15, 0.3);
-  }, [playTone]);
-
-  const playGameOver = useCallback(() => {
-    playTone(220, 'sawtooth', 0.3, 0.2);
-    playTone(165, 'sawtooth', 0.3, 0.2, 0.2);
-    playTone(110, 'sawtooth', 0.4, 0.2, 0.4);
-  }, [playTone]);
-
   const toggleMute = useCallback(() => {
     setMuted(m => {
       const next = !m;
-      mutedRef.current = next; // FIX 4: update ref here instead of render body
       try { localStorage.setItem('blockpuzzle_muted', String(next)); } catch { /* silent */ }
       return next;
     });
@@ -179,7 +72,6 @@ export function useGameLogic() {
 
   // ── Start / Reset game ──
   const startGame = useCallback(() => {
-    // FIX 5: clear all timers on restart
     if (clearTimerRef.current) clearTimeout(clearTimerRef.current);
     if (gameOverTimerRef.current) clearTimeout(gameOverTimerRef.current);
     if (comboTimerRef.current) clearTimeout(comboTimerRef.current);
@@ -190,6 +82,7 @@ export function useGameLogic() {
     poolRef.current = newPool;
     scoreRef.current = 0;
     isClearingRef.current = false;
+    prevStateRef.current = null;
     setBoard(emptyBoard);
     setPool(newPool);
     setScore(0);
@@ -218,16 +111,47 @@ export function useGameLogic() {
   // ── Game Over check ──
   const checkGameOver = useCallback((checkBoard: Board, checkPool: (Figure | null)[]) => {
     const activeFigures = checkPool.filter(Boolean) as Figure[];
-    if (activeFigures.length === 0) return; // pool will regenerate
+    if (activeFigures.length === 0) return;
     const canMove = activeFigures.some(fig => canFigureFitAnywhere(checkBoard, fig.matrix));
     if (!canMove) {
-      // FIX 1: store timer ID so we can cancel it on restart
       gameOverTimerRef.current = setTimeout(() => {
         playGameOver();
         setScreen('gameover');
       }, 150);
     }
   }, [playGameOver]);
+
+  // ── Undo (1 step) ──
+  const undo = useCallback(() => {
+    if (isClearingRef.current) return;
+    if (!prevStateRef.current) return;
+
+    // Cancel pending timers
+    if (clearTimerRef.current) clearTimeout(clearTimerRef.current);
+    if (gameOverTimerRef.current) clearTimeout(gameOverTimerRef.current);
+    if (comboTimerRef.current) clearTimeout(comboTimerRef.current);
+
+    const prev = prevStateRef.current;
+    boardRef.current = prev.board;
+    poolRef.current = prev.pool;
+    scoreRef.current = prev.score;
+
+    setBoard(prev.board);
+    setPool(prev.pool);
+    setScore(prev.score);
+    setClearingCells({ rows: new Set(), cols: new Set() });
+    setIsClearing(false);
+    isClearingRef.current = false;
+    setComboText(null);
+    setLastScore(0);
+    prevStateRef.current = null;
+
+    if (screen === 'gameover') {
+      setScreen('game');
+    }
+  }, [screen]);
+
+  const canUndo = prevStateRef.current !== null && !isClearing;
 
   // ── Place a figure ──
   const placeFigure = useCallback((
@@ -248,6 +172,13 @@ export function useGameLogic() {
     if (!figure) return false;
 
     if (!canPlaceFigure(currentBoard, figure.matrix, boardRow, boardCol)) return false;
+
+    // Save state for undo (only 1 step)
+    prevStateRef.current = {
+      board: currentBoard.map(row => [...row]),
+      pool: [...currentPool],
+      score: scoreRef.current,
+    };
 
     playPlace();
 
@@ -286,8 +217,7 @@ export function useGameLogic() {
         const labels: Record<number, string> = { 2: 'DOUBLE!', 3: 'TRIPLE!', 4: 'QUAD!' };
         const txt = linesTotal >= 4 ? `${linesTotal}× COMBO!` : (labels[linesTotal] ?? `${linesTotal}× COMBO!`);
         setComboText({ text: txt, x: pointerX ?? window.innerWidth / 2, y: pointerY ?? 200, id: Date.now() });
-        
-        // FIX 2: clear previous combo timer before setting new one
+
         if (comboTimerRef.current) clearTimeout(comboTimerRef.current);
         comboTimerRef.current = setTimeout(() => setComboText(null), 950);
       }
@@ -325,9 +255,11 @@ export function useGameLogic() {
     isClearing,
     comboText,
     muted,
+    canUndo,
     startGame,
     placeFigure,
     toggleMute,
+    undo,
     setScreen,
   };
 }

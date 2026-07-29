@@ -44,3 +44,6 @@ export function useLang(): LangContextValue {
   if (!ctx) throw new Error('useLang must be used inside LanguageProvider');
   return ctx;
 }
+
+// Alias for backward compatibility
+export const useLanguage = useLang;

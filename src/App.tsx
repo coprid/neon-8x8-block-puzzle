@@ -1,23 +1,28 @@
+import { useState } from 'react';
 import { useGameLogic } from './useGameLogic';
 import MenuScreen from './components/MenuScreen';
 import GameScreen from './components/GameScreen';
 import GameOverlay from './components/GameOverlay';
+import SettingsOverlay from './components/SettingsOverlay';
 
 export default function App() {
+  const [settingsOpen, setSettingsOpen] = useState(false);
+
   const {
     screen,
     board,
     pool,
     score,
     best,
-    lastScore,
     clearingCells,
     isClearing,
     comboText,
     muted,
+    canUndo,
     startGame,
     placeFigure,
     toggleMute,
+    undo,
     setScreen,
   } = useGameLogic();
 
@@ -109,9 +114,12 @@ export default function App() {
               isClearing={isClearing}
               muted={muted}
               comboText={comboText}
+              canUndo={canUndo}
               onPlace={placeFigure}
               onNewGame={startGame}
               onToggleMute={toggleMute}
+              onUndo={undo}
+              onOpenSettings={() => setSettingsOpen(true)}
             />
             {screen === 'gameover' && (
               <GameOverlay
@@ -124,6 +132,11 @@ export default function App() {
           </>
         )}
       </div>
+
+      {/* Settings overlay */}
+      {settingsOpen && (
+        <SettingsOverlay onClose={() => setSettingsOpen(false)} />
+      )}
     </div>
   );
 }

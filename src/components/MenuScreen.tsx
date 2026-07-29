@@ -1,4 +1,4 @@
-import { useLanguage } from '../useLanguage';
+import { useLanguage } from '../LanguageContext';
 
 interface MenuScreenProps {
   best: number;

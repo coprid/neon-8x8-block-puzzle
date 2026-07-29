@@ -1,6 +1,6 @@
 import { useRef, useState, useCallback, useLayoutEffect } from 'react';
-import { useLanguage } from '../useLanguage';
-import { Board, ClearingCells, Figure, canPlaceFigure, BOARD_SIZE } from '../useGameLogic';
+import { useLanguage } from '../LanguageContext';
+import { Board, ClearingCells, Figure, canPlaceFigure, BOARD_SIZE } from '../gameEngine';
 import { ShapeMatrix } from '../gameShapes';
 import GameBoard from './GameBoard';
 import FigurePool from './FigurePool';
@@ -23,9 +23,12 @@ interface GameScreenProps {
   isClearing: boolean;
   muted: boolean;
   comboText: { text: string; x: number; y: number; id: number } | null;
+  canUndo: boolean;
   onPlace: (figureId: string, boardRow: number, boardCol: number, px: number, py: number) => boolean;
   onNewGame: () => void;
   onToggleMute: () => void;
+  onUndo: () => void;
+  onOpenSettings: () => void;
 }
 
 export default function GameScreen({
@@ -37,9 +40,12 @@ export default function GameScreen({
   isClearing,
   muted,
   comboText,
+  canUndo,
   onPlace,
   onNewGame,
   onToggleMute,
+  onUndo,
+  onOpenSettings,
 }: GameScreenProps) {
   const { t } = useLanguage();
   const [hoverState, setHoverState] = useState<HoverState | null>(null);
@@ -94,8 +100,8 @@ export default function GameScreen({
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        padding: '10px 14px 8px',
-        gap: 10,
+        padding: '16px 20px 14px',
+        gap: 16,
         position: 'relative',
         overflow: 'hidden',
         boxSizing: 'border-box',
@@ -128,12 +134,13 @@ export default function GameScreen({
       </div>
 
       {/* Score & controls */}
-      <div style={{ width: '100%', maxWidth: boardPx, flexShrink: 0, position: 'relative', zIndex: 2 }}>
+      <div style={{ width: '100%', maxWidth: boardPx, flexShrink: 0, position: 'relative', zIndex: 2, marginBottom: 14 }}>
         <ScorePanel
           score={score}
           best={best}
           muted={muted}
           onToggleMute={onToggleMute}
+          onSettingsClick={onOpenSettings}
         />
       </div>
 
@@ -186,13 +193,14 @@ export default function GameScreen({
         maxWidth: boardPx,
         flexShrink: 0,
         display: 'flex',
-        gap: 8,
+        gap: 12,
         position: 'relative',
         zIndex: 2,
       }}>
         <button
           className="neon-btn"
-          disabled
+          onClick={onUndo}
+          disabled={!canUndo}
           style={{
             flex: 1,
             height: 48,
@@ -204,16 +212,17 @@ export default function GameScreen({
             fontSize: 11,
             fontWeight: 700,
             letterSpacing: '0.15em',
-            color: 'rgba(0,207,255,0.35)',
-            background: 'rgba(8,14,40,0.6)',
-            border: '1px solid rgba(0,207,255,0.22)',
+            color: canUndo ? '#00CFFF' : 'rgba(0,207,255,0.35)',
+            background: canUndo ? 'rgba(8,14,40,0.6)' : 'rgba(8,14,40,0.3)',
+            border: `1px solid ${canUndo ? 'rgba(0,207,255,0.45)' : 'rgba(0,207,255,0.22)'}`,
             borderRadius: 14,
-            cursor: 'not-allowed',
+            cursor: canUndo ? 'pointer' : 'not-allowed',
             textTransform: 'uppercase',
-            opacity: 0.55,
+            opacity: canUndo ? 1 : 0.55,
+            transition: 'all 0.2s ease',
           }}
         >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(0,207,255,0.35)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={canUndo ? '#00CFFF' : 'rgba(0,207,255,0.35)'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M3 7v6h6" />
             <path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13" />
           </svg>

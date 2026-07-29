@@ -17,6 +17,9 @@ export const translations = {
     playAgain: '▶ Play Again',
     menu: 'Menu',
     newHighScore: '✦ NEW HIGH SCORE ✦',
+    settings: 'SETTINGS',
+    language: 'Language',
+    close: 'Close',
   },
   ru: {
     play: '▶ ИГРАТЬ',
@@ -36,6 +39,9 @@ export const translations = {
     playAgain: '▶ ИГРАТЬ СНОВА',
     menu: 'МЕНЮ',
     newHighScore: '✦ НОВЫЙ РЕКОРД ✦',
+    settings: 'НАСТРОЙКИ',
+    language: 'Язык',
+    close: 'Закрыть',
   },
 } as const;
 

@@ -1,5 +1,5 @@
 import { useMemo, type RefObject } from 'react';
-import { Board, ClearingCells, BOARD_SIZE } from '../useGameLogic';
+import { Board, ClearingCells, BOARD_SIZE } from '../gameEngine';
 import { getShapeCells, ShapeMatrix } from '../gameShapes';
 
 interface HoverState {

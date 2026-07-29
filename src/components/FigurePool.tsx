@@ -1,5 +1,5 @@
 import React, { useRef, useCallback, useState, useEffect } from 'react';
-import { Figure, Board, canPlaceFigure, BOARD_SIZE } from '../useGameLogic';
+import { Figure, Board, canPlaceFigure, BOARD_SIZE } from '../gameEngine';
 import { getShapeCells, ShapeMatrix, ColorKey } from '../gameShapes';
 import FigurePreview from './FigurePreview';
 
@@ -191,6 +191,7 @@ export default function FigurePool({
           minHeight: 96,
           gap: 6,
           backdropFilter: 'blur(8px)',
+          marginTop: 8,
         }}
       >
         {pool.map((figure, idx) => {
