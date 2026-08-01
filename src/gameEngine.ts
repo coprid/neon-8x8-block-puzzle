@@ -73,13 +73,45 @@ export function clearLines(board: Board, rows: number[], cols: number[]): Board 
   }
   return newBoard;
 }
+// Чистая механика размещения: возвращает НОВУЮ доску с фигурой на позиции (row, col).
+// Валидность хода здесь НЕ проверяется — это ответственность вызывающего (canPlaceFigure).
+export function placeFigureOnBoard(
+  board: Board,
+  figure: Figure,
+  row: number,
+  col: number,
+): Board {
+  const next = board.map(r => [...r]);
+  for (const [dr, dc] of getShapeCells(figure.matrix)) {
+    next[row + dr][col + dc] = { colorKey: figure.colorKey, figureId: figure.id };
+  }
+  return next;
+}
+// Чистая механика пула: обнуляет слот и сообщает, опустел ли пул целиком.
+// Регенерацию нового пула здесь НЕ делаем — вызывающий решит сам по флагу depleted.
+export function withFigureRemoved(
+  pool: ReadonlyArray<Figure | null>,
+  index: number,
+): { pool: (Figure | null)[]; depleted: boolean } {
+  const next = pool.slice();
+  next[index] = null;
+  return { pool: next, depleted: next.every(f => f === null) };
+}
+export const SCORING = {
+  PER_CELL: 10,
+  BONUS_1_LINE: 80,
+  BONUS_2_LINES: 200,
+  BONUS_3_LINES: 400,
+  BONUS_4_LINES: 800,
+  PER_EXTRA_LINE: 200, // за каждую линию сверх четырёх
+} as const;
 
 export function calcScore(rowsCleared: number, colsCleared: number, cellsPlaced: number): number {
   const linesTotal = rowsCleared + colsCleared;
-  let base = cellsPlaced * 10;
-  if (linesTotal === 1) base += 80;
-  else if (linesTotal === 2) base += 200;
-  else if (linesTotal === 3) base += 400;
-  else if (linesTotal >= 4) base += 800 + (linesTotal - 4) * 200;
+  let base = cellsPlaced * SCORING.PER_CELL;
+  if (linesTotal === 1) base += SCORING.BONUS_1_LINE;
+  else if (linesTotal === 2) base += SCORING.BONUS_2_LINES;
+  else if (linesTotal === 3) base += SCORING.BONUS_3_LINES;
+  else if (linesTotal >= 4) base += SCORING.BONUS_4_LINES + (linesTotal - 4) * SCORING.PER_EXTRA_LINE;
   return base;
 }

@@ -12,11 +12,20 @@ import {
   canFigureFitAnywhere,
   getLinesToClear,
   clearLines,
+  placeFigureOnBoard,
+  withFigureRemoved,
   calcScore,
 } from './gameEngine';
 
 export type { Board, ClearingCells };
 export { BOARD_SIZE };
+
+// ⚠ CLEAR_ANIM_MS держать равным длительности @keyframes cellFlash в index.css (сейчас 0.52s)
+const TIMING = {
+  CLEAR_ANIM_MS: 520,
+  COMBO_TEXT_MS: 950,
+  GAME_OVER_DELAY_MS: 150,
+} as const;
 
 interface PrevState {
   board: Board;
@@ -39,7 +48,7 @@ export function useGameLogic() {
   const [muted, setMuted] = useState(() => {
     try { return localStorage.getItem('blockpuzzle_muted') === 'true'; } catch { return false; }
   });
-
+  const [hasSnapshot, setHasSnapshot] = useState(false);
   // Audio hook
   const { playPlace, playClear, playGameOver } = useAudio(muted);
 
@@ -83,6 +92,7 @@ export function useGameLogic() {
     scoreRef.current = 0;
     isClearingRef.current = false;
     prevStateRef.current = null;
+    setHasSnapshot(false);
     setBoard(emptyBoard);
     setPool(newPool);
     setScore(0);
@@ -117,7 +127,7 @@ export function useGameLogic() {
       gameOverTimerRef.current = setTimeout(() => {
         playGameOver();
         setScreen('gameover');
-      }, 150);
+      }, TIMING.GAME_OVER_DELAY_MS);
     }
   }, [playGameOver]);
 
@@ -145,13 +155,13 @@ export function useGameLogic() {
     setComboText(null);
     setLastScore(0);
     prevStateRef.current = null;
-
+    setHasSnapshot(false);
     if (screen === 'gameover') {
       setScreen('game');
     }
   }, [screen]);
 
-  const canUndo = prevStateRef.current !== null && !isClearing;
+  const canUndo = hasSnapshot && !isClearing;
 
   // ── Place a figure ──
   const placeFigure = useCallback((
@@ -179,25 +189,18 @@ export function useGameLogic() {
       pool: [...currentPool],
       score: scoreRef.current,
     };
-
+    setHasSnapshot(true);
     playPlace();
 
     // Place blocks on board
-    const newBoard = currentBoard.map(row => [...row]);
+    const newBoard = placeFigureOnBoard(currentBoard, figure, boardRow, boardCol);
     const cells = getShapeCells(figure.matrix);
-    for (const [dr, dc] of cells) {
-      newBoard[boardRow + dr][boardCol + dc] = { colorKey: figure.colorKey, figureId: figure.id };
-    }
     boardRef.current = newBoard;
     setBoard(newBoard);
 
     // Update pool
-    const newPool = [...currentPool];
-    newPool[figIdx] = null;
-
-    // Check if all used → regenerate
-    const allUsed = newPool.every(f => f === null);
-    const finalPool = allUsed ? generateFigurePool(3) : newPool;
+    const { pool: nextPool, depleted } = withFigureRemoved(currentPool, figIdx);
+    const finalPool = depleted ? generateFigurePool(3) : nextPool;
     poolRef.current = finalPool;
     setPool(finalPool);
 
@@ -219,7 +222,7 @@ export function useGameLogic() {
         setComboText({ text: txt, x: pointerX ?? window.innerWidth / 2, y: pointerY ?? 200, id: Date.now() });
 
         if (comboTimerRef.current) clearTimeout(comboTimerRef.current);
-        comboTimerRef.current = setTimeout(() => setComboText(null), 950);
+        comboTimerRef.current = setTimeout(() => setComboText(null), TIMING.COMBO_TEXT_MS);
       }
 
       // Flash animation
@@ -236,7 +239,7 @@ export function useGameLogic() {
         isClearingRef.current = false;
         setBoard(clearedBoard);
         checkGameOver(clearedBoard, finalPool);
-      }, 520);
+      }, TIMING.CLEAR_ANIM_MS);
     } else {
       checkGameOver(newBoard, finalPool);
     }
