@@ -10,14 +10,6 @@ export type ColorKey = 'blue' | 'green' | 'pink' | 'yellow' | 'orange' | 'purple
 
 export const COLOR_KEYS: ColorKey[] = ['blue', 'green', 'pink', 'yellow', 'orange', 'purple'];
 
-export const COLOR_MAP: Record<ColorKey, { hex: string; glow: string }> = {
-  blue:   { hex: '#00d4ff', glow: '#00d4ff' },
-  green:  { hex: '#39ff14', glow: '#39ff14' },
-  pink:   { hex: '#ff2d78', glow: '#ff2d78' },
-  yellow: { hex: '#ffdd00', glow: '#ffdd00' },
-  orange: { hex: '#ff6b00', glow: '#ff6b00' },
-  purple: { hex: '#bf5fff', glow: '#bf5fff' },
-};
 
 // All possible shape matrices (trimmed, no padding)
 const SHAPES: ShapeMatrix[] = [
