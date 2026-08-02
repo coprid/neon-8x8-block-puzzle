@@ -31,6 +31,7 @@ interface PrevState {
   board: Board;
   pool: (Figure | null)[];
   score: number;
+  streak: number;
 }
 
 export function useGameLogic() {
@@ -56,6 +57,7 @@ export function useGameLogic() {
   const boardRef = useRef<Board>(createEmptyBoard());
   const poolRef = useRef<(Figure | null)[]>([null, null, null]);
   const scoreRef = useRef(0);
+  const streakRef = useRef(0);
   const isClearingRef = useRef(false);
   const prevStateRef = useRef<PrevState | null>(null);
 
@@ -90,6 +92,7 @@ export function useGameLogic() {
     boardRef.current = emptyBoard;
     poolRef.current = newPool;
     scoreRef.current = 0;
+    streakRef.current = 0;
     isClearingRef.current = false;
     prevStateRef.current = null;
     setHasSnapshot(false);
@@ -145,7 +148,7 @@ export function useGameLogic() {
     boardRef.current = prev.board;
     poolRef.current = prev.pool;
     scoreRef.current = prev.score;
-
+    streakRef.current = prev.streak;
     setBoard(prev.board);
     setPool(prev.pool);
     setScore(prev.score);
@@ -188,6 +191,7 @@ export function useGameLogic() {
       board: currentBoard.map(row => [...row]),
       pool: [...currentPool],
       score: scoreRef.current,
+      streak: streakRef.current,
     };
     setHasSnapshot(true);
     playPlace();
@@ -204,26 +208,29 @@ export function useGameLogic() {
     poolRef.current = finalPool;
     setPool(finalPool);
 
-    // Detect lines
-    const { rows, cols } = getLinesToClear(newBoard);
-    const linesTotal = rows.length + cols.length;
-
-    // Score for placed cells
-    const gained = calcScore(rows.length, cols.length, cells.length);
-    addScore(gained);
-
-    if (linesTotal > 0) {
-      playClear(linesTotal);
-
-      // Combo text
-      if (linesTotal >= 2) {
-        const labels: Record<number, string> = { 2: 'DOUBLE!', 3: 'TRIPLE!', 4: 'QUAD!' };
-        const txt = linesTotal >= 4 ? `${linesTotal}× COMBO!` : (labels[linesTotal] ?? `${linesTotal}× COMBO!`);
-        setComboText({ text: txt, x: pointerX ?? window.innerWidth / 2, y: pointerY ?? 200, id: Date.now() });
-
-        if (comboTimerRef.current) clearTimeout(comboTimerRef.current);
-        comboTimerRef.current = setTimeout(() => setComboText(null), TIMING.COMBO_TEXT_MS);
-      }
+  // Detect lines
+  const { rows, cols } = getLinesToClear(newBoard);
+  const linesTotal = rows.length + cols.length;
+  // Streak: сколько ходов подряд чистили линии
+  if (linesTotal > 0) streakRef.current += 1; else streakRef.current = 0;
+  const streak = streakRef.current;
+  const streakMult = streak >= 4 ? 2.5 : streak === 3 ? 2 : streak === 2 ? 1.5 : 1;
+  // Score for placed cells, умножаем на бонус серии
+  const gained = Math.round(calcScore(rows.length, cols.length, cells.length) * streakMult);
+  addScore(gained);
+  if (linesTotal > 0) {
+    playClear(linesTotal);
+    // Combo / streak text
+    if (linesTotal >= 2 || streak >= 2) {
+      const labels: Record<number, string> = { 2: 'DOUBLE!', 3: 'TRIPLE!', 4: 'QUAD!' };
+      let txt = linesTotal >= 2
+        ? (linesTotal >= 4 ? `${linesTotal}× COMBO!` : (labels[linesTotal] ?? `${linesTotal}× COMBO!`))
+        : 'STREAK!';
+      if (streak >= 2) txt += `  ✦  ×${streakMult}`;
+      setComboText({ text: txt, x: pointerX ?? window.innerWidth / 2, y: pointerY ?? 200, id: Date.now() });
+      if (comboTimerRef.current) clearTimeout(comboTimerRef.current);
+      comboTimerRef.current = setTimeout(() => setComboText(null), TIMING.COMBO_TEXT_MS);
+    }
 
       // Flash animation
       setClearingCells({ rows: new Set(rows), cols: new Set(cols) });

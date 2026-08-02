@@ -4,6 +4,7 @@ import { useLanguage } from '../LanguageContext';
 interface ScorePanelProps {
   score: number;
   best: number;
+  lastScore: number;
   muted: boolean;
   onToggleMute: () => void;
   onSettingsClick: () => void;
@@ -13,10 +14,12 @@ function ScoreBox({
   label,
   value,
   accent = false,
+  overlay,
 }: {
   label: string;
   value: number;
   accent?: boolean;
+  overlay?: React.ReactNode;
 }) {
   const [popping, setPopping] = useState(false);
   const prevRef = useRef(value);
@@ -30,9 +33,10 @@ function ScoreBox({
     }
   }, [value]);
 
-  return (
+ return (
     <div
       style={{
+        position: 'relative',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
@@ -77,6 +81,7 @@ function ScoreBox({
       >
         {value.toLocaleString()}
       </span>
+      {overlay}
     </div>
   );
 }
@@ -123,13 +128,32 @@ function IconButton({
 export default function ScorePanel({
   score,
   best,
+  lastScore,
   muted,
   onToggleMute,
   onSettingsClick,
 }: ScorePanelProps) {
   const { t } = useLanguage();
   const isLeading = score > 0 && score >= best;
-
+  // Всплывающее +N над полем счёта
+  const [floatVal, setFloatVal] = useState<number | null>(null);
+  const [floatKey, setFloatKey] = useState(0);
+  const firstScoreRef = useRef(true);
+  const prevScoreRef = useRef(score);
+  const floatTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => { if (floatTimerRef.current) clearTimeout(floatTimerRef.current); }, []);
+  useEffect(() => {
+    if (firstScoreRef.current) { firstScoreRef.current = false; prevScoreRef.current = score; return; }
+    if (score !== prevScoreRef.current) {
+      prevScoreRef.current = score;
+      if (lastScore > 0) {
+        setFloatVal(lastScore);
+        setFloatKey(k => k + 1);
+        if (floatTimerRef.current) clearTimeout(floatTimerRef.current);
+        floatTimerRef.current = setTimeout(() => setFloatVal(null), 850);
+      }
+    }
+  }, [score, lastScore]);
   return (
     <div style={{
       display: 'flex',
@@ -162,8 +186,14 @@ export default function ScorePanel({
         </svg>
       </IconButton>
 
-      <ScoreBox label={t('score')} value={score} />
-      <ScoreBox label={t('best')} value={best} accent={isLeading} />
+      <ScoreBox
+    label={t('score')}
+    value={score}
+    overlay={floatVal !== null ? (
+      <div key={floatKey} className="score-float">+{floatVal.toLocaleString()}</div>
+    ) : undefined}
+  />
+  <ScoreBox label={t('best')} value={best} accent={isLeading} />
     </div>
   );
 }

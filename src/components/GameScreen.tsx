@@ -19,6 +19,7 @@ interface GameScreenProps {
   pool: (Figure | null)[];
   score: number;
   best: number;
+  lastScore: number;
   clearingCells: ClearingCells;
   isClearing: boolean;
   muted: boolean;
@@ -36,6 +37,7 @@ export default function GameScreen({
   pool,
   score,
   best,
+  lastScore,
   clearingCells,
   isClearing,
   muted,
@@ -138,6 +140,7 @@ export default function GameScreen({
         <ScorePanel
           score={score}
           best={best}
+          lastScore={lastScore}
           muted={muted}
           onToggleMute={onToggleMute}
           onSettingsClick={onOpenSettings}

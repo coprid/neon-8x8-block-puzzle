@@ -14,6 +14,7 @@ export default function App() {
     pool,
     score,
     best,
+    lastScore,
     clearingCells,
     isClearing,
     comboText,
@@ -110,6 +111,7 @@ export default function App() {
               pool={pool}
               score={score}
               best={best}
+              lastScore={lastScore}
               clearingCells={clearingCells}
               isClearing={isClearing}
               muted={muted}
