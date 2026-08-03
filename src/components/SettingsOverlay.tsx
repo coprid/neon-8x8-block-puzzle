@@ -1,12 +1,23 @@
+import { useRef } from 'react';
 import { useLanguage } from '../LanguageContext';
-
 interface SettingsOverlayProps {
+  volume: number;
+  onVolumeChange: (v: number) => void;
+  onTestSound: () => void;
   onClose: () => void;
 }
-
-export default function SettingsOverlay({ onClose }: SettingsOverlayProps) {
+export default function SettingsOverlay({ volume, onVolumeChange, onTestSound, onClose }: SettingsOverlayProps) {
   const { lang, setLang, t } = useLanguage();
-
+  const volumePct = Math.round(volume * 100);
+  const lastTestRef = useRef(0);
+  const handleVolumeChange = (v: number) => {
+    onVolumeChange(v);
+    const now = Date.now();
+    if (now - lastTestRef.current > 120) {
+      lastTestRef.current = now;
+      setTimeout(onTestSound, 0); // тик позже: новая громкость успевает примениться
+    }
+  };
   return (
     <div
       style={{
@@ -115,7 +126,42 @@ export default function SettingsOverlay({ onClose }: SettingsOverlayProps) {
             ))}
           </div>
         </div>
-
+        {/* Volume section */}
+        <div style={{ marginBottom: 28 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 14 }}>
+            <div style={{
+              fontFamily: 'Orbitron, sans-serif',
+              fontSize: 10,
+              color: '#2A4A7A',
+              letterSpacing: '0.25em',
+              textTransform: 'uppercase',
+            }}>
+              {t('volume')}
+            </div>
+            <div style={{
+              fontFamily: 'Orbitron, sans-serif',
+              fontSize: 11,
+              fontWeight: 700,
+              color: '#00CFFF',
+              textShadow: '0 0 8px rgba(0,207,255,0.6)',
+            }}>
+              {volumePct}%
+            </div>
+          </div>
+          <input
+            type="range"
+            min={0}
+            max={100}
+            step={5}
+            value={volumePct}
+            onChange={(e) => handleVolumeChange(Number(e.target.value) / 100)}
+            className="neon-range"
+            aria-label={t('volume')}
+            style={{
+              background: `linear-gradient(90deg, rgba(0,207,255,0.85) ${volumePct}%, rgba(30,58,138,0.45) ${volumePct}%)`,
+            }}
+          />
+        </div>
         {/* Close button */}
         <button
           className="neon-btn"

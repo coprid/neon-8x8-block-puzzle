@@ -20,6 +20,7 @@ export const translations = {
     settings: 'SETTINGS',
     language: 'Language',
     close: 'Close',
+    volume: 'Volume',
   },
   ru: {
     play: '▶ ИГРАТЬ',
@@ -42,6 +43,7 @@ export const translations = {
     settings: 'НАСТРОЙКИ',
     language: 'Язык',
     close: 'Закрыть',
+    volume: 'ГРОМКОСТЬ',
   },
 } as const;
 

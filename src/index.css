@@ -389,6 +389,32 @@ body {
 ::-webkit-scrollbar-track { background: var(--bg-deep); }
 ::-webkit-scrollbar-thumb { background: #1E3080; border-radius: 2px; }
 /* ─────────────────────────────────────────
+NEON RANGE SLIDER
+───────────────────────────────────────── */
+.neon-range {
+  -webkit-appearance: none;
+  appearance: none;
+  display: block;
+  width: 100%;
+  height: 6px;
+  border-radius: 3px;
+  border: 1px solid rgba(0,207,255,0.35);
+  outline: none;
+  cursor: pointer;
+  box-shadow: inset 0 0 6px rgba(0,0,0,0.5), 0 0 8px rgba(0,207,255,0.15);
+}
+.neon-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 35%, #B0EFFF 0%, #00CFFF 60%, #0070DD 100%);
+  border: 1px solid #00CFFF;
+  box-shadow: 0 0 10px rgba(0,207,255,0.8), 0 0 22px rgba(0,207,255,0.4);
+  cursor: pointer;
+}
+/* ─────────────────────────────────────────
 SCORE +N FLOAT
 ───────────────────────────────────────── */
 @keyframes scoreFloatUp {

@@ -1,12 +1,15 @@
 import { useRef, useCallback, useEffect } from 'react';
 
-export function useAudio(muted: boolean) {
+export function useAudio(muted: boolean, volume = 1) {
   const audioCtx = useRef<AudioContext | null>(null);
   const mutedRef = useRef(muted);
-
+  const volumeRef = useRef(volume);
   useEffect(() => {
     mutedRef.current = muted;
   }, [muted]);
+  useEffect(() => {
+    volumeRef.current = volume;
+  }, [volume]);
 
   // ── AudioContext helper ──
   const getAudio = useCallback((): AudioContext | null => {
@@ -29,6 +32,8 @@ export function useAudio(muted: boolean) {
   const playTone = useCallback((freq: number, type: OscillatorType, duration: number, vol = 0.18, delay = 0) => {
     const ctx = getAudio();
     if (!ctx) return;
+    const v = vol * volumeRef.current;
+    if (v <= 0) return;
     try {
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
@@ -36,7 +41,7 @@ export function useAudio(muted: boolean) {
       gain.connect(ctx.destination);
       osc.type = type;
       osc.frequency.setValueAtTime(freq, ctx.currentTime + delay);
-      gain.gain.setValueAtTime(vol, ctx.currentTime + delay);
+      gain.gain.setValueAtTime(v, ctx.currentTime + delay);
       gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + delay + duration);
       osc.start(ctx.currentTime + delay);
       osc.stop(ctx.currentTime + delay + duration);

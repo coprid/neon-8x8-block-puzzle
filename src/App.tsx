@@ -19,12 +19,15 @@ export default function App() {
     isClearing,
     comboText,
     muted,
+    volume,
+    setVolume,
     canUndo,
     startGame,
     placeFigure,
     toggleMute,
     undo,
     setScreen,
+    playPlace,
   } = useGameLogic();
 
   return (
@@ -136,9 +139,14 @@ export default function App() {
       </div>
 
       {/* Settings overlay */}
-      {settingsOpen && (
-        <SettingsOverlay onClose={() => setSettingsOpen(false)} />
-      )}
+     {settingsOpen && (
+      <SettingsOverlay
+        volume={volume}
+        onVolumeChange={setVolume}
+        onTestSound={playPlace}
+        onClose={() => setSettingsOpen(false)}
+      />
+    )}
     </div>
   );
 }

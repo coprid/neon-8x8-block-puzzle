@@ -49,9 +49,15 @@ export function useGameLogic() {
   const [muted, setMuted] = useState(() => {
     try { return localStorage.getItem('blockpuzzle_muted') === 'true'; } catch { return false; }
   });
+  const [volume, setVolumeState] = useState(() => {
+    try {
+      const s = parseFloat(localStorage.getItem('blockpuzzle_volume') ?? '1');
+      return Number.isFinite(s) ? Math.min(1, Math.max(0, s)) : 1;
+    } catch { return 1; }
+  });
   const [hasSnapshot, setHasSnapshot] = useState(false);
   // Audio hook
-  const { playPlace, playClear, playGameOver } = useAudio(muted);
+  const { playPlace, playClear, playGameOver } = useAudio(muted, volume);
 
   // Mutable refs for async callbacks
   const boardRef = useRef<Board>(createEmptyBoard());
@@ -73,12 +79,17 @@ export function useGameLogic() {
     };
   }, []);
 
-  const toggleMute = useCallback(() => {
+   const toggleMute = useCallback(() => {
     setMuted(m => {
       const next = !m;
       try { localStorage.setItem('blockpuzzle_muted', String(next)); } catch { /* silent */ }
       return next;
     });
+  }, []);
+  const setVolume = useCallback((v: number) => {
+    const clamped = Math.min(1, Math.max(0, v));
+    setVolumeState(clamped);
+    try { localStorage.setItem('blockpuzzle_volume', String(clamped)); } catch { /* silent */ }
   }, []);
 
   // ── Start / Reset game ──
@@ -265,11 +276,14 @@ export function useGameLogic() {
     isClearing,
     comboText,
     muted,
+    volume,
+    setVolume,
     canUndo,
     startGame,
     placeFigure,
     toggleMute,
     undo,
     setScreen,
+    playPlace,
   };
 }
