@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useGameLogic } from './useGameLogic';
 import MenuScreen from './components/MenuScreen';
 import GameScreen from './components/GameScreen';
@@ -7,7 +7,11 @@ import SettingsOverlay from './components/SettingsOverlay';
 
 export default function App() {
   const [settingsOpen, setSettingsOpen] = useState(false);
-
+   useEffect(() => {
+  const block = (e: MouseEvent) => e.preventDefault();
+    window.addEventListener('contextmenu', block);
+    return () => window.removeEventListener('contextmenu', block);
+  }, []);
   const {
     screen,
     board,
