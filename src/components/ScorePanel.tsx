@@ -59,7 +59,7 @@ function ScoreBox({
         fontSize: 8,
         fontWeight: 700,
         letterSpacing: '0.28em',
-        color: accent ? '#8A6A00' : '#1E3460',
+        color: accent ? '#B8960B' : '#5A78AA',
         textTransform: 'uppercase',
         marginBottom: 2,
       }}>

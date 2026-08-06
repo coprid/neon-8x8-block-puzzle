@@ -124,7 +124,7 @@ export default function MenuScreen({ best, onStart }: MenuScreenProps) {
             <div style={{
               fontFamily: 'Orbitron, sans-serif',
               fontSize: 9,
-              color: '#2A4A7A',
+              color: '#5A78AA',
               letterSpacing: '0.3em',
               marginBottom: 3,
               textTransform: 'uppercase',
@@ -181,7 +181,7 @@ export default function MenuScreen({ best, onStart }: MenuScreenProps) {
           <div style={{
             fontFamily: 'Orbitron, sans-serif',
             fontSize: 9,
-            color: '#2A4A7A',
+            color: '#5A78AA',
             letterSpacing: '0.3em',
             textTransform: 'uppercase',
             marginBottom: 12,

@@ -87,7 +87,7 @@ export default function SettingsOverlay({ volume, onVolumeChange, onTestSound, o
           <div style={{
             fontFamily: 'Orbitron, sans-serif',
             fontSize: 10,
-            color: '#2A4A7A',
+            color: '#5A78AA',
             letterSpacing: '0.25em',
             textTransform: 'uppercase',
             marginBottom: 14,
@@ -132,7 +132,7 @@ export default function SettingsOverlay({ volume, onVolumeChange, onTestSound, o
             <div style={{
               fontFamily: 'Orbitron, sans-serif',
               fontSize: 10,
-              color: '#2A4A7A',
+              color: '#5A78AA',
               letterSpacing: '0.25em',
               textTransform: 'uppercase',
             }}>

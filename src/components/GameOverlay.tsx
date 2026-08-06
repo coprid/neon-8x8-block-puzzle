@@ -77,7 +77,7 @@ export default function GameOverlay({ score, best, onReplay, onMenu }: GameOverl
         <div style={{
           fontFamily: 'Orbitron, sans-serif',
           fontSize: 11,
-          color: '#2A4A7A',
+          color: '#5A78AA',
           letterSpacing: '0.15em',
           marginBottom: 24,
         }}>
@@ -95,8 +95,8 @@ export default function GameOverlay({ score, best, onReplay, onMenu }: GameOverl
         }}>
           <div style={{
             fontFamily: 'Orbitron, sans-serif',
-            fontSize: 10,
-            color: '#1E3460',
+            fontSize: 11,
+            color: '#5A78AA',
             letterSpacing: '0.25em',
             textTransform: 'uppercase',
             marginBottom: 6,
@@ -119,7 +119,7 @@ export default function GameOverlay({ score, best, onReplay, onMenu }: GameOverl
         <div style={{
           fontFamily: 'Orbitron, sans-serif',
           fontSize: 12,
-          color: isNewHigh ? '#FFE000' : '#2A4A7A',
+          color: isNewHigh ? '#FFE000' : '#5A78AA',
           letterSpacing: '0.1em',
           marginBottom: 28,
           textShadow: isNewHigh ? '0 0 12px rgba(255,224,0,0.5)' : 'none',
