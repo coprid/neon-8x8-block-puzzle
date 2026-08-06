@@ -1,19 +1,8 @@
-import { useMemo, type RefObject } from 'react';
+import { type RefObject } from 'react';
 import { Board, ClearingCells, BOARD_SIZE } from '../gameEngine';
-import { getShapeCells, ShapeMatrix } from '../gameShapes';
-
-interface HoverState {
-  figureId: string;
-  matrix: ShapeMatrix;
-  boardRow: number;
-  boardCol: number;
-  valid: boolean;
-}
-
 interface GameBoardProps {
   board: Board;
   clearingCells: ClearingCells;
-  hoverState: HoverState | null;
   cellSize: number;
   boardRef: RefObject<HTMLDivElement | null>;
 }
@@ -27,21 +16,7 @@ const COLOR_CLASSES: Record<string, string> = {
   purple: 'cell-purple',
 };
 
-export default function GameBoard({ board, clearingCells, hoverState, cellSize, boardRef }: GameBoardProps) {
-  const hoveredCells = useMemo<Map<string, boolean>>(() => {
-    const map = new Map<string, boolean>();
-    if (!hoverState) return map;
-    const cells = getShapeCells(hoverState.matrix);
-    for (const [dr, dc] of cells) {
-      const r = hoverState.boardRow + dr;
-      const c = hoverState.boardCol + dc;
-      if (r >= 0 && r < BOARD_SIZE && c >= 0 && c < BOARD_SIZE) {
-        map.set(`${r},${c}`, hoverState.valid);
-      }
-    }
-    return map;
-  }, [hoverState]);
-
+export default function GameBoard({ board, clearingCells, cellSize, boardRef }: GameBoardProps) {
   return (
     <div
       ref={boardRef}
@@ -56,7 +31,7 @@ export default function GameBoard({ board, clearingCells, hoverState, cellSize, 
         boxShadow: [
           '0 0 0 1px rgba(0,207,255,0.25)',
           '0 0 18px rgba(0,207,255,0.32)',
-          '0 0 54px rgba(0,80,255,0.22)',
+          '0 0 30px rgba(0,80,255,0.16)',
           '0 10px 36px rgba(0,0,0,0.58)',
           'inset 0 0 28px rgba(0,207,255,0.08)',
         ].join(', '),
@@ -66,21 +41,15 @@ export default function GameBoard({ board, clearingCells, hoverState, cellSize, 
     >
       {board.map((row, r) =>
         row.map((cell, c) => {
-          const key = `${r},${c}`;
-          const isClearing = clearingCells.rows.has(r) || clearingCells.cols.has(c);
-          const hoverValid = hoveredCells.get(key);
-          const isHovered = hoverValid !== undefined;
-
-          let className = '';
-
-          if (cell) {
-            className = COLOR_CLASSES[cell.colorKey] || 'cell-blue';
-            if (isClearing) className += ' cell-clearing';
-          } else if (isHovered) {
-            className = hoverValid ? 'cell-hover-valid' : 'cell-hover-invalid';
-          } else {
-            className = 'cell-empty';
-          }
+                const key = `${r},${c}`;
+      const isClearing = clearingCells.rows.has(r) || clearingCells.cols.has(c);
+      let className = '';
+       if (cell) {
+         className = COLOR_CLASSES[cell.colorKey] || 'cell-blue';
+         if (isClearing) className += ' cell-clearing';
+       } else {
+         className = 'cell-empty';
+       }
 
           return (
             <div

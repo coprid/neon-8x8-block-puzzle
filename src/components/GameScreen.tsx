@@ -1,18 +1,9 @@
-import { useRef, useState, useCallback, useLayoutEffect } from 'react';
+import { useRef, useState, useLayoutEffect } from 'react';
 import { useLanguage } from '../LanguageContext';
-import { Board, ClearingCells, Figure, canPlaceFigure, BOARD_SIZE } from '../gameEngine';
-import { ShapeMatrix } from '../gameShapes';
+import { Board, ClearingCells, Figure, BOARD_SIZE } from '../gameEngine';
 import GameBoard from './GameBoard';
 import FigurePool from './FigurePool';
 import ScorePanel from './ScorePanel';
-
-interface HoverState {
-  figureId: string;
-  matrix: ShapeMatrix;
-  boardRow: number;
-  boardCol: number;
-  valid: boolean;
-}
 
 interface GameScreenProps {
   board: Board;
@@ -50,7 +41,6 @@ export default function GameScreen({
   onOpenSettings,
 }: GameScreenProps) {
   const { t } = useLanguage();
-  const [hoverState, setHoverState] = useState<HoverState | null>(null);
   const boardRef = useRef<HTMLDivElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [cellSize, setCellSize] = useState(38);
@@ -78,17 +68,6 @@ export default function GameScreen({
       window.removeEventListener('resize', compute);
     };
   }, []);
-
-  const handleHoverChange = useCallback((state: HoverState | null) => {
-    if (!state) { setHoverState(null); return; }
-    const valid = canPlaceFigure(board, state.matrix, state.boardRow, state.boardCol);
-    setHoverState({ ...state, valid });
-  }, [board]);
-
-  const handlePlace = useCallback((figId: string, row: number, col: number, px: number, py: number): boolean => {
-    setHoverState(null);
-    return onPlace(figId, row, col, px, py);
-  }, [onPlace]);
 
   const boardPx = cellSize * BOARD_SIZE;
 
@@ -163,7 +142,7 @@ export default function GameScreen({
           borderRadius: 18,
           background: 'linear-gradient(135deg, rgba(0,207,255,0.12), rgba(192,96,255,0.08), rgba(255,26,112,0.06))',
           border: '1px solid rgba(0,207,255,0.36)',
-          boxShadow: '0 0 22px rgba(0,207,255,0.24), 0 0 64px rgba(0,90,255,0.18), inset 0 0 30px rgba(0,207,255,0.1)',
+          boxShadow: '0 0 22px rgba(0,207,255,0.24), 0 0 34px rgba(0,90,255,0.14), inset 0 0 30px rgba(0,207,255,0.1)',
           animation: 'neonFramePulse 3s ease-in-out infinite',
           pointerEvents: 'none',
           zIndex: -1,
@@ -171,7 +150,7 @@ export default function GameScreen({
         <GameBoard
           board={board}
           clearingCells={clearingCells}
-          hoverState={hoverState}
+      
           cellSize={cellSize}
           boardRef={boardRef}
         />
@@ -185,8 +164,7 @@ export default function GameScreen({
           boardRef={boardRef}
           cellSize={cellSize}
           isClearing={isClearing}
-          onPlace={handlePlace}
-          onHoverChange={handleHoverChange}
+          onPlace={onPlace}
         />
       </div>
 

@@ -7,12 +7,13 @@ const POOL_CELL = 26;       // Cell size in pool tray
 const DRAG_CELL = 40;       // Cell size when dragging (slightly larger)
 const LIFT_Y   = -68;       // How many px the ghost lifts above pointer (positive = above)
 
-interface HoverState {
-  figureId: string;
+interface HoverOverlay {
   matrix: ShapeMatrix;
   boardRow: number;
   boardCol: number;
   valid: boolean;
+  left: number;
+  top: number;
 }
 
 interface FigurePoolProps {
@@ -22,7 +23,7 @@ interface FigurePoolProps {
   cellSize: number;
   isClearing: boolean;
   onPlace: (figureId: string, boardRow: number, boardCol: number, px: number, py: number) => boolean;
-  onHoverChange: (state: HoverState | null) => void;
+ 
 }
 
 interface DragState {
@@ -50,11 +51,13 @@ export default function FigurePool({
   cellSize,
   isClearing,
   onPlace,
-  onHoverChange,
 }: FigurePoolProps) {
   const [dragging, setDragging] = useState<DragState | null>(null);
   const [shakingSlot, setShakingSlot] = useState<number | null>(null);
+  const [hover, setHover] = useState<HoverOverlay | null>(null);
   const dragRef = useRef<DragState | null>(null);
+  const ghostRef = useRef<HTMLDivElement | null>(null);
+  const hoverKeyRef = useRef('');
 
   /** Compute board [row, col] that the figure's top-left would land on */
   const getDropCell = useCallback((
@@ -83,25 +86,25 @@ export default function FigurePool({
   }, [boardRef, cellSize]);
 
   const updateHover = useCallback((clientX: number, clientY: number, drag: DragState) => {
+    const clearHover = () => { if (hoverKeyRef.current !== '') { hoverKeyRef.current = ''; setHover(null); } };
     const tl = getDropCell(clientX, clientY, drag.matrix);
-    if (!tl) { onHoverChange(null); return; }
+    const boardEl = boardRef.current;
+    if (!tl || !boardEl) { clearHover(); return; }
     const [boardRow, boardCol] = tl;
-
-    // Check if any cell of the figure overlaps the board grid
     const cells = getShapeCells(drag.matrix);
     const anyOnBoard = cells.some(([dr, dc]) => {
       const r = boardRow + dr;
       const c = boardCol + dc;
       return r >= 0 && r < BOARD_SIZE && c >= 0 && c < BOARD_SIZE;
     });
-
-    if (anyOnBoard) {
-      const valid = canPlaceFigure(board, drag.matrix, boardRow, boardCol);
-      onHoverChange({ figureId: drag.figureId, matrix: drag.matrix, boardRow, boardCol, valid });
-    } else {
-      onHoverChange(null);
-    }
-  }, [board, getDropCell, onHoverChange]);
+    if (!anyOnBoard) { clearHover(); return; }
+    const valid = canPlaceFigure(board, drag.matrix, boardRow, boardCol);
+    const key = `${boardRow},${boardCol},${valid ? 1 : 0}`;
+    if (key === hoverKeyRef.current) return;
+    hoverKeyRef.current = key;
+    const rect = boardEl.getBoundingClientRect();
+    setHover({ matrix: drag.matrix, boardRow, boardCol, valid, left: rect.left, top: rect.top });
+  }, [board, boardRef, getDropCell]);
 
   const handlePointerDown = useCallback((
     e: React.PointerEvent,
@@ -130,18 +133,19 @@ export default function FigurePool({
     const drag = dragRef.current;
     if (!drag) return;
     e.preventDefault();
-    const updated = { ...drag, currentX: e.clientX, currentY: e.clientY };
-    dragRef.current = updated;
-    setDragging({ ...updated });
-    updateHover(e.clientX, e.clientY, updated);
+    // Ghost moves via direct DOM write (transform) — no React re-render per move
+    if (ghostRef.current) {
+      const dx = e.clientX - drag.currentX;
+      const dy = e.clientY - drag.currentY;
+      ghostRef.current.style.transform = `translate(${dx}px, ${dy}px)`;
+    }
+    updateHover(e.clientX, e.clientY, drag);
   }, [updateHover]);
 
   const handlePointerUp = useCallback((e: PointerEvent) => {
     const drag = dragRef.current;
     if (!drag) return;
     e.preventDefault();
-    onHoverChange(null);
-
     const tl = getDropCell(e.clientX, e.clientY, drag.matrix);
     let placed = false;
     if (tl) {
@@ -154,9 +158,11 @@ export default function FigurePool({
       setTimeout(() => setShakingSlot(null), 400);
     }
 
-    dragRef.current = null;
+      dragRef.current = null;
     setDragging(null);
-  }, [getDropCell, onHoverChange, onPlace]);
+    hoverKeyRef.current = '';
+    setHover(null);
+  }, [getDropCell, onPlace]);
 
   useEffect(() => {
     const opts = { passive: false } as AddEventListenerOptions;
@@ -267,10 +273,11 @@ export default function FigurePool({
         const ghostX = dragging.currentX - w / 2;
         const ghostY = dragging.currentY + LIFT_Y;
         return (
-          <div
-            className="drag-ghost"
-            style={{ left: ghostX, top: ghostY, width: w, height: h }}
-          >
+       <div
+         ref={ghostRef}
+         className="drag-ghost"
+         style={{ left: ghostX, top: ghostY, width: w, height: h }}
+       >
             <FigurePreview
               matrix={dragging.matrix}
               colorKey={dragging.colorKey}
@@ -278,8 +285,52 @@ export default function FigurePool({
               glowing
             />
           </div>
-        );
-      })()}
-    </>
-  );
+            );
+   })()}
+   {/* Hover overlay on board (owned here, not in GameBoard) */}
+   {hover && (() => {
+     const cells = getShapeCells(hover.matrix);
+     const size = BOARD_SIZE * cellSize;
+     return (
+       <div
+         style={{
+           position: 'fixed',
+           left: hover.left,
+           top: hover.top,
+           width: size,
+           height: size,
+           pointerEvents: 'none',
+           zIndex: 3,
+           borderRadius: 10,
+           overflow: 'hidden',
+         }}
+       >
+         {cells.map(([dr, dc]) => {
+           const r = hover.boardRow + dr;
+           const c = hover.boardCol + dc;
+           if (r < 0 || r >= BOARD_SIZE || c < 0 || c >= BOARD_SIZE) return null;
+           return (
+             <div
+               key={`${r}-${c}`}
+               style={{
+                 position: 'absolute',
+                 left: c * cellSize,
+                 top: r * cellSize,
+                 width: cellSize,
+                 height: cellSize,
+                 borderRadius: Math.max(4, Math.round(cellSize * 0.18)),
+                 background: hover.valid ? 'rgba(0,207,255,0.26)' : 'rgba(255,26,112,0.2)',
+                 border: `1px solid ${hover.valid ? 'rgba(0,207,255,0.85)' : 'rgba(255,26,112,0.78)'}`,
+                 boxShadow: hover.valid
+                   ? 'inset 0 0 12px rgba(0,207,255,0.38), 0 0 8px rgba(0,207,255,0.45)'
+                   : 'inset 0 0 10px rgba(255,26,112,0.3), 0 0 8px rgba(255,26,112,0.35)',
+               }}
+             />
+           );
+         })}
+       </div>
+     );
+   })()}
+ </>
+);
 }
