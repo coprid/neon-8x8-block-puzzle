@@ -44,45 +44,56 @@ export default function GameScreen({
   const boardRef = useRef<HTMLDivElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [cellSize, setCellSize] = useState(38);
+  const [compact, setCompact] = useState(false);
 
+  // Пересчёт клетки от ФАКТИЧЕСКОЙ высоты контейнера
+  // (резерв 64px на мобильных уже съеден высотой контейнера — см. App)
   useLayoutEffect(() => {
     const compute = () => {
-      const vw = window.innerWidth;
-      const vh = window.innerHeight;
-      const dvh = vh;
-
-      const maxW = Math.min(vw, 480) - 32;
-      const maxH = dvh - 85 - 115 - 24;
-
-      const fromW = Math.floor(maxW / BOARD_SIZE);
-      const fromH = Math.floor(maxH / BOARD_SIZE);
+      const el = containerRef.current;
+      if (!el) return;
+      const w = el.clientWidth;
+      const h = el.clientHeight;
+      const isCompact = h < 700;
+      // Вертикальный бюджет «всё, кроме поля» — должен совпадать со стилями ниже
+      const chrome = isCompact ? 300 : 354;
+      const sidePad = isCompact ? 24 : 40;
+      const fromW = Math.floor((Math.min(w, 480) - sidePad) / BOARD_SIZE);
+      const fromH = Math.floor((h - chrome) / BOARD_SIZE);
       const raw = Math.min(fromW, fromH, 52);
-      setCellSize(Math.max(raw, 28));
+      setCellSize(Math.max(raw, 22));
+      setCompact(isCompact);
     };
     compute();
     const ro = new ResizeObserver(compute);
     if (containerRef.current) ro.observe(containerRef.current);
     window.addEventListener('resize', compute);
+    window.addEventListener('orientationchange', compute);
+    document.addEventListener('fullscreenchange', compute);
     return () => {
       ro.disconnect();
       window.removeEventListener('resize', compute);
+      window.removeEventListener('orientationchange', compute);
+      document.removeEventListener('fullscreenchange', compute);
     };
   }, []);
 
   const boardPx = cellSize * BOARD_SIZE;
+  // Компакт-режим для низких экранов: те же числа, что в chrome/sidePad выше
+  const C = compact
+    ? { pad: '10px 12px', gap: 10, titleSize: 'clamp(18px, 5vw, 24px)', titleMb: 0, scoreMb: 8, btnH: 44 }
+    : { pad: '16px 20px 14px', gap: 16, titleSize: 'clamp(22px, 6vw, 32px)', titleMb: 2, scoreMb: 14, btnH: 48 };
 
   return (
     <div
       ref={containerRef}
       style={{
         width: '100%',
-        height: '100dvh',
-        maxHeight: '100dvh',
+        height: '100%',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        padding: '16px 20px 14px',
-        gap: 16,
+        gap: C.gap,
         position: 'relative',
         overflow: 'hidden',
         boxSizing: 'border-box',
@@ -96,11 +107,10 @@ export default function GameScreen({
         pointerEvents: 'none',
         zIndex: 0,
       }} />
-
       {/* Title */}
       <div style={{
         fontFamily: 'Orbitron, sans-serif',
-        fontSize: 'clamp(22px, 6vw, 32px)',
+        fontSize: C.titleSize,
         fontWeight: 900,
         color: '#00CFFF',
         letterSpacing: '0.15em',
@@ -109,13 +119,12 @@ export default function GameScreen({
         flexShrink: 0,
         position: 'relative',
         zIndex: 2,
-        marginBottom: 2,
+        marginBottom: C.titleMb,
       }}>
         CHROMABLOCKS
       </div>
-
       {/* Score & controls */}
-      <div style={{ width: '100%', maxWidth: boardPx, flexShrink: 0, position: 'relative', zIndex: 2, marginBottom: 14 }}>
+      <div style={{ width: '100%', maxWidth: boardPx, flexShrink: 0, position: 'relative', zIndex: 2, marginBottom: C.scoreMb }}>
         <ScorePanel
           score={score}
           best={best}
@@ -125,7 +134,6 @@ export default function GameScreen({
           onSettingsClick={onOpenSettings}
         />
       </div>
-
       {/* Board */}
       <div style={{
         display: 'flex',
@@ -150,13 +158,11 @@ export default function GameScreen({
         <GameBoard
           board={board}
           clearingCells={clearingCells}
-      
           cellSize={cellSize}
           boardRef={boardRef}
         />
       </div>
-
-      {/* Figure pool */}
+          {/* Figure pool */}
       <div style={{ width: '100%', maxWidth: boardPx, flexShrink: 0, position: 'relative', zIndex: 2 }}>
         <FigurePool
           pool={pool}
@@ -167,7 +173,6 @@ export default function GameScreen({
           onPlace={onPlace}
         />
       </div>
-
       {/* Bottom actions */}
       <div style={{
         width: '100%',
@@ -184,7 +189,7 @@ export default function GameScreen({
           disabled={!canUndo}
           style={{
             flex: 1,
-            height: 48,
+            height: C.btnH,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -214,7 +219,7 @@ export default function GameScreen({
           onClick={onNewGame}
           style={{
             flex: 1,
-            height: 48,
+            height: C.btnH,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -223,13 +228,14 @@ export default function GameScreen({
             fontSize: 11,
             fontWeight: 700,
             letterSpacing: '0.15em',
-            color: '#050810',
-            background: 'linear-gradient(135deg, #00CFFF 0%, #0070DD 100%)',
-            border: 'none',
+            color: '#00CFFF',
+            background: 'linear-gradient(135deg, rgba(0,207,255,0.16) 0%, rgba(0,112,221,0.18) 100%)',
+            border: '1px solid rgba(0,207,255,0.65)',
             borderRadius: 14,
             cursor: 'pointer',
             textTransform: 'uppercase',
-            boxShadow: '0 0 20px rgba(0,207,255,0.4), 0 4px 12px rgba(0,0,0,0.4)',
+            boxShadow: '0 0 14px rgba(0,207,255,0.28), inset 0 0 12px rgba(0,207,255,0.1)',
+            transition: 'all 0.2s ease',
           }}
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -240,7 +246,6 @@ export default function GameScreen({
           {t('newGame')}
         </button>
       </div>
-
       {/* Combo text burst */}
       {comboText && (
         <div

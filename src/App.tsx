@@ -7,10 +7,27 @@ import SettingsOverlay from './components/SettingsOverlay';
 
 export default function App() {
   const [settingsOpen, setSettingsOpen] = useState(false);
-   useEffect(() => {
-  const block = (e: MouseEvent) => e.preventDefault();
+    useEffect(() => {
+    const block = (e: MouseEvent) => e.preventDefault();
     window.addEventListener('contextmenu', block);
     return () => window.removeEventListener('contextmenu', block);
+  }, []);
+  // Мобильное устройство = сенсорный экран И меньшая сторона экрана < 500px
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const compute = () => {
+      const coarse = window.matchMedia('(pointer: coarse)').matches;
+      setIsMobile(coarse && Math.min(window.innerWidth, window.innerHeight) < 500);
+    };
+    compute();
+    window.addEventListener('resize', compute);
+    window.addEventListener('orientationchange', compute);
+    document.addEventListener('fullscreenchange', compute);
+    return () => {
+      window.removeEventListener('resize', compute);
+      window.removeEventListener('orientationchange', compute);
+      document.removeEventListener('fullscreenchange', compute);
+    };
   }, []);
   const {
     screen,
@@ -97,7 +114,8 @@ export default function App() {
           zIndex: 1,
           width: '100%',
           maxWidth: 480,
-          height: '100dvh',
+          height: '100%',
+          paddingBottom: isMobile ? 64 : 0,
           overflow: 'hidden',
           display: 'flex',
           flexDirection: 'column',
