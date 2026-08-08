@@ -1,5 +1,5 @@
 
-/* ── Google Fonts loaded in index.html ── */
+/* ── Fonts bundled locally via @fontsource (imported in main.tsx) ── */
 
 :root {
   --bg-deep: #050810;

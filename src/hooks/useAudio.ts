@@ -7,9 +7,24 @@ export function useAudio(muted: boolean, volume = 1) {
   useEffect(() => {
     mutedRef.current = muted;
   }, [muted]);
-  useEffect(() => {
+    useEffect(() => {
     volumeRef.current = volume;
   }, [volume]);
+
+  // Звук останавливается, когда вкладка свёрнута
+  useEffect(() => {
+    const onVisibility = () => {
+      const ctx = audioCtx.current;
+      if (!ctx) return;
+      if (document.hidden) {
+        ctx.suspend().catch(() => {});
+      } else if (!mutedRef.current && ctx.state === 'suspended') {
+        ctx.resume().catch(() => {});
+      }
+    };
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => document.removeEventListener('visibilitychange', onVisibility);
+  }, []);
 
   // ── AudioContext helper ──
   const getAudio = useCallback((): AudioContext | null => {

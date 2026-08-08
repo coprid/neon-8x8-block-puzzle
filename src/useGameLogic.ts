@@ -162,14 +162,11 @@ export function useGameLogic() {
     setClearingCells({ rows: new Set(), cols: new Set() });
     setIsClearing(false);
     isClearingRef.current = false;
-    setComboText(null);
-    setLastScore(0);
-    prevStateRef.current = null;
-    setHasSnapshot(false);
-    if (screen === 'gameover') {
-      setScreen('game');
-    }
-  }, [screen]);
+  setComboText(null);
+  setLastScore(0);
+  prevStateRef.current = null;
+  setHasSnapshot(false);
+  }, []);
 
   const canUndo = hasSnapshot && !isClearing;
 

@@ -103,10 +103,11 @@ export default function MenuScreen({ best, onStart }: MenuScreenProps) {
             letterSpacing: '0.08em',
             margin: '0 0 6px',
             lineHeight: 1,
-          }}
-        >
-          CHROMABLOCKS
-        </h1>
+            textTransform: 'uppercase',
+       }}
+     >
+       ChromaBlocks
+     </h1>
 
         {/* Best score */}
         {best > 0 && (

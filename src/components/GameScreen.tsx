@@ -116,13 +116,15 @@ export default function GameScreen({
         letterSpacing: '0.15em',
         textShadow: '0 0 16px rgba(0,207,255,0.7), 0 0 32px rgba(0,207,255,0.4)',
         textAlign: 'center',
+        textTransform: 'uppercase',
         flexShrink: 0,
         position: 'relative',
         zIndex: 2,
         marginBottom: C.titleMb,
-      }}>
-        CHROMABLOCKS
-      </div>
+     }}
+   >
+     ChromaBlocks
+   </div>
       {/* Score & controls */}
       <div style={{ width: '100%', maxWidth: boardPx, flexShrink: 0, position: 'relative', zIndex: 2, marginBottom: C.scoreMb }}>
         <ScorePanel
