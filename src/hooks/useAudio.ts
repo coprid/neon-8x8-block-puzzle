@@ -26,6 +26,20 @@ export function useAudio(muted: boolean, volume = 1) {
     return () => document.removeEventListener('visibilitychange', onVisibility);
   }, []);
 
+  // Пауза звука на время полноэкранной рекламы 
+  useEffect(() => {
+    const pause = () => { audioCtx.current?.suspend().catch(() => {}); };
+    const resume = () => {
+      if (!mutedRef.current) audioCtx.current?.resume().catch(() => {});
+    };
+    window.addEventListener('chroma-ad-open', pause);
+    window.addEventListener('chroma-ad-close', resume);
+    return () => {
+      window.removeEventListener('chroma-ad-open', pause);
+      window.removeEventListener('chroma-ad-close', resume);
+    };
+  }, []);
+
   // ── AudioContext helper ──
   const getAudio = useCallback((): AudioContext | null => {
     if (mutedRef.current) return null;

@@ -1,5 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useGameLogic } from './useGameLogic';
+import { showInterstitialAd } from './yandexSdk';
+import { initYandexSdk, notifyGameReady } from './yandexSdk';
 import MenuScreen from './components/MenuScreen';
 import GameScreen from './components/GameScreen';
 import GameOverlay from './components/GameOverlay';
@@ -7,11 +9,30 @@ import SettingsOverlay from './components/SettingsOverlay';
 
 export default function App() {
   const [settingsOpen, setSettingsOpen] = useState(false);
-    useEffect(() => {
+      useEffect(() => {
     const block = (e: MouseEvent) => e.preventDefault();
     window.addEventListener('contextmenu', block);
     return () => window.removeEventListener('contextmenu', block);
   }, []);
+
+  // Инициализация SDK Яндекс Игр + сообщение о готовности (вне Яндекса — ничего не делает)
+  useEffect(() => {
+    initYandexSdk().then(notifyGameReady);
+  }, []);
+    // Межстраничная реклама — только в логической паузе:
+  // когда игрок САМ жмёт «Играть снова» после поражения.
+  // Не показываем первые две партии и чаще, чем раз в 2 минуты.
+  const adRef = useRef({ replays: 0, lastAd: 0 });
+  const handleReplay = () => {
+    const st = adRef.current;
+    st.replays += 1;
+    const now = Date.now();
+    if (st.replays >= 2 && now - st.lastAd >= 120000) {
+      st.lastAd = now;
+      showInterstitialAd();
+    }
+    startGame();
+  };
   // Мобильное устройство = сенсорный экран И меньшая сторона экрана < 500px
   const [isMobile, setIsMobile] = useState(false);
   useEffect(() => {
@@ -152,7 +173,7 @@ export default function App() {
               <GameOverlay
                 score={score}
                 best={best}
-                onReplay={startGame}
+                onReplay={handleReplay}
                 onMenu={() => setScreen('menu')}
               />
             )}

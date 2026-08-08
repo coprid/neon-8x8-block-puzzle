@@ -1,6 +1,6 @@
-import { createContext, useContext, useState, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Lang, TranslationKey, translations } from './translations';
-
+import { initYandexSdk, getYandexLanguage } from './yandexSdk';
 interface LangContextValue {
   lang: Lang;
   setLang: (lang: Lang) => void;
@@ -24,6 +24,17 @@ function getStoredLang(): Lang | null {
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
   const [lang, setLangState] = useState<Lang>(() => getStoredLang() ?? detectBrowserLang());
+
+  // Требование Яндекса: внутри платформы язык игры управляется через SDK.
+  // Вне Яндекса (Vercel, dev) getYandexLanguage вернёт null — всё как раньше.
+  useEffect(() => {
+    initYandexSdk().then(() => {
+      const yLang = getYandexLanguage();
+      if (yLang) {
+        setLangState(yLang.toLowerCase().startsWith('ru') ? 'ru' : 'en');
+      }
+    });
+  }, []);
 
   const setLang = (next: Lang) => {
     setLangState(next);

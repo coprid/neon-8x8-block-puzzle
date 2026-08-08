@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { generateFigurePool, getShapeCells } from './gameShapes';
 import { useAudio } from './hooks/useAudio';
+import { initYandexSdk, loadCloudBest, saveCloudBest } from './yandexSdk';
 import {
   Board,
   Figure,
@@ -74,7 +75,21 @@ export function useGameLogic() {
       if (comboTimerRef.current) clearTimeout(comboTimerRef.current);
     };
   }, []);
-
+  // Достаём рекорд из облака Яндекса и объединяем с местным (побеждает больший)
+  useEffect(() => {
+    let cancelled = false;
+    initYandexSdk().then(loadCloudBest).then((cloudBest) => {
+      if (cancelled || cloudBest == null) return;
+      setBest(b => {
+        const merged = Math.max(b, cloudBest);
+        if (merged > b) {
+          try { localStorage.setItem('blockpuzzle_best', String(merged)); } catch { /* silent */ }
+        }
+        return merged;
+      });
+    });
+    return () => { cancelled = true; };
+  }, []);
    const toggleMute = useCallback(() => {
     setMuted(m => {
       const next = !m;
@@ -119,15 +134,15 @@ export function useGameLogic() {
     const next = scoreRef.current;
     setScore(next);
     setLastScore(gained);
-    setBest(b => {
+        setBest(b => {
       if (next > b) {
         try { localStorage.setItem('blockpuzzle_best', String(next)); } catch { /* silent */ }
+        saveCloudBest(next); // рекорд дублируется в облако Яндекса
         return next;
       }
       return b;
     });
-  }, []);
-
+    }, []);
   // ── Game Over check ──
   const checkGameOver = useCallback((checkBoard: Board, checkPool: (Figure | null)[]) => {
     const activeFigures = checkPool.filter(Boolean) as Figure[];
