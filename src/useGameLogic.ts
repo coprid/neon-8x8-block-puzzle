@@ -2,7 +2,6 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { generateFigurePool, getShapeCells } from './gameShapes';
 import { useAudio } from './hooks/useAudio';
 import {
-  BOARD_SIZE,
   Board,
   Figure,
   GameScreen,
@@ -16,9 +15,6 @@ import {
   withFigureRemoved,
   calcScore,
 } from './gameEngine';
-
-export type { Board, ClearingCells };
-export { BOARD_SIZE };
 
 // ⚠ CLEAR_ANIM_MS держать равным длительности @keyframes cellFlash в index.css (сейчас 0.52s)
 const TIMING = {

@@ -69,7 +69,7 @@ const SHAPES: ShapeMatrix[] = [
 
 let shapeIdCounter = 0;
 
-export function getRandomShape(): { matrix: ShapeMatrix; colorKey: ColorKey } {
+function getRandomShape(): { matrix: ShapeMatrix; colorKey: ColorKey } {
   const matrix = SHAPES[Math.floor(Math.random() * SHAPES.length)];
   const colorKey = COLOR_KEYS[Math.floor(Math.random() * COLOR_KEYS.length)];
   return { matrix, colorKey };

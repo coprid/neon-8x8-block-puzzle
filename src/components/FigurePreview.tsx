@@ -4,7 +4,6 @@ interface FigurePreviewProps {
   matrix: (0 | 1)[][];
   colorKey: ColorKey;
   cellSize: number;
-  opacity?: number;
   glowing?: boolean;
 }
 
@@ -56,7 +55,6 @@ export default function FigurePreview({
   matrix,
   colorKey,
   cellSize,
-  opacity = 1,
   glowing = false,
 }: FigurePreviewProps) {
   const s = COLOR_STYLES[colorKey];
@@ -71,7 +69,7 @@ export default function FigurePreview({
         gridTemplateColumns: `repeat(${cols}, ${cellSize}px)`,
         gridTemplateRows: `repeat(${rows}, ${cellSize}px)`,
         gap: `${gap}px`,
-        opacity,
+  
       }}
     >
       {matrix.map((row, r) =>

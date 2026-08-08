@@ -55,7 +55,7 @@ export default function GameOverlay({ score, best, onReplay, onMenu }: GameOverl
           width: 200,
           height: 120,
           borderRadius: '50%',
-          background: 'radial-gradient(ellipse, rgba(255,26,112,0.12) 0%, transparent 70%)',
+          background: 'radial-gradient(ellipse, rgba(0,207,255,0.12) 0%, transparent 70%)',
           pointerEvents: 'none',
         }} />
 
@@ -64,8 +64,8 @@ export default function GameOverlay({ score, best, onReplay, onMenu }: GameOverl
           fontFamily: 'Orbitron, sans-serif',
           fontSize: 'clamp(24px, 6vw, 32px)',
           fontWeight: 900,
-          color: '#FF1A70',
-          textShadow: '0 0 16px rgba(255,26,112,0.7), 0 0 32px rgba(255,26,112,0.4)',
+          color: '#00CFFF',
+          textShadow: '0 0 16px rgba(0,207,255,0.7), 0 0 32px rgba(0,207,255,0.4)',
           letterSpacing: '0.12em',
           marginBottom: 8,
           position: 'relative',

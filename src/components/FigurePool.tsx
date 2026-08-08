@@ -38,9 +38,10 @@ interface DragState {
 function figureSize(matrix: ShapeMatrix, cs: number): { w: number; h: number } {
   const cols = matrix[0]?.length ?? 1;
   const rows = matrix.length;
+  const gap = Math.max(1, Math.round(cs * 0.07)); // та же формула, что внутри самой фигуры
   return {
-    w: cols * cs + Math.max(0, cols - 1) * 2,
-    h: rows * cs + Math.max(0, rows - 1) * 2,
+    w: cols * cs + Math.max(0, cols - 1) * gap,
+    h: rows * cs + Math.max(0, rows - 1) * gap,
   };
 }
 
@@ -164,15 +165,25 @@ export default function FigurePool({
     setHover(null);
   }, [getDropCell, onPlace]);
 
-  useEffect(() => {
-    const opts = { passive: false } as AddEventListenerOptions;
-    window.addEventListener('pointermove', handlePointerMove, opts);
-    window.addEventListener('pointerup',   handlePointerUp,   opts);
-    return () => {
-      window.removeEventListener('pointermove', handlePointerMove);
-      window.removeEventListener('pointerup',   handlePointerUp);
-    };
-  }, [handlePointerMove, handlePointerUp]);
+// Если систему прервали — просто возвращаем фигуру в лоток
+const handlePointerCancel = useCallback(() => {
+  dragRef.current = null;
+  setDragging(null);
+  hoverKeyRef.current = '';
+  setHover(null);
+}, []);
+
+useEffect(() => {
+  const opts = { passive: false } as AddEventListenerOptions;
+  window.addEventListener('pointermove', handlePointerMove, opts);
+  window.addEventListener('pointerup',   handlePointerUp,   opts);
+  window.addEventListener('pointercancel', handlePointerCancel);
+  return () => {
+    window.removeEventListener('pointermove', handlePointerMove);
+    window.removeEventListener('pointerup',   handlePointerUp);
+    window.removeEventListener('pointercancel', handlePointerCancel);
+  };
+}, [handlePointerMove, handlePointerUp, handlePointerCancel]);
 
   return (
     <>
