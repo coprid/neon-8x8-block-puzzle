@@ -5,9 +5,9 @@ interface GameOverlayProps {
   best: number;
   onReplay: () => void;
   onMenu: () => void;
+  onRevive?: () => void;
 }
-
-export default function GameOverlay({ score, best, onReplay, onMenu }: GameOverlayProps) {
+export default function GameOverlay({ score, best, onReplay, onMenu, onRevive }: GameOverlayProps) {
   const { t } = useLanguage();
   const isNewHigh = score > 0 && score >= best;
 
@@ -127,51 +127,75 @@ export default function GameOverlay({ score, best, onReplay, onMenu }: GameOverl
           {isNewHigh ? t('newHighScore') : `${t('best')}: ${best.toLocaleString()}`}
         </div>
 
-        {/* Buttons */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          <button
-            className="neon-btn"
-            onClick={onReplay}
-            style={{
-              width: '100%',
-              height: 48,
-              fontFamily: 'Orbitron, sans-serif',
-              fontSize: 12,
-              fontWeight: 700,
-              letterSpacing: '0.15em',
-              color: '#050810',
-              background: 'linear-gradient(135deg, #00CFFF 0%, #0070DD 100%)',
-              border: 'none',
-              borderRadius: 14,
-              cursor: 'pointer',
-              textTransform: 'uppercase',
-              boxShadow: '0 0 20px rgba(0,207,255,0.4), 0 4px 12px rgba(0,0,0,0.4)',
-            }}
-          >
-            {t('playAgain')}
-          </button>
-          <button
-            className="neon-btn"
-            onClick={onMenu}
-            style={{
-              width: '100%',
-              height: 44,
-              fontFamily: 'Orbitron, sans-serif',
-              fontSize: 11,
-              fontWeight: 700,
-              letterSpacing: '0.15em',
-              color: '#4A6AA0',
-              background: 'rgba(30,46,90,0.4)',
-              border: '1px solid rgba(30,58,138,0.5)',
-              borderRadius: 14,
-              cursor: 'pointer',
-              textTransform: 'uppercase',
-              transition: 'all 0.2s ease',
-            }}
-          >
-            {t('menu')}
-          </button>
-        </div>
+             {/* Buttons */}
+     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+       <button
+         className="neon-btn"
+         onClick={onReplay}
+         style={{
+           width: '100%',
+           height: 48,
+           fontFamily: 'Orbitron, sans-serif',
+           fontSize: 12,
+           fontWeight: 700,
+           letterSpacing: '0.15em',
+           color: '#050810',
+           background: 'linear-gradient(135deg, #00CFFF 0%, #0070DD 100%)',
+           border: 'none',
+           borderRadius: 14,
+           cursor: 'pointer',
+           textTransform: 'uppercase',
+           boxShadow: '0 0 20px rgba(0,207,255,0.4), 0 4px 12px rgba(0,0,0,0.4)',
+         }}
+       >
+         {t('playAgain')}
+       </button>
+       {onRevive && (
+         <button
+           className="neon-btn"
+           onClick={onRevive}
+           style={{
+             width: '100%',
+             height: 44,
+             fontFamily: 'Orbitron, sans-serif',
+             fontSize: 10,
+             fontWeight: 700,
+             letterSpacing: '0.1em',
+              color: '#FFB000',
+             background: 'rgba(60,40,0,0.35)',
+             border: '1px solid rgba(255,176,0,0.55)',
+             borderRadius: 14,
+             cursor: 'pointer',
+             textTransform: 'uppercase',
+             boxShadow: '0 0 14px rgba(255,176,0,0.25), inset 0 0 12px rgba(255,176,0,0.08)',
+             transition: 'all 0.2s ease',
+           }}
+         >
+           {t('revive')}
+         </button>
+       )}
+       <button
+         className="neon-btn"
+         onClick={onMenu}
+         style={{
+           width: '100%',
+           height: 44,
+           fontFamily: 'Orbitron, sans-serif',
+           fontSize: 11,
+           fontWeight: 700,
+           letterSpacing: '0.15em',
+           color: '#4A6AA0',
+           background: 'rgba(30,46,90,0.4)',
+           border: '1px solid rgba(30,58,138,0.5)',
+           borderRadius: 14,
+           cursor: 'pointer',
+           textTransform: 'uppercase',
+           transition: 'all 0.2s ease',
+         }}
+       >
+         {t('menu')}
+       </button>
+     </div>
       </div>
     </div>
   );

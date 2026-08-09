@@ -3,6 +3,7 @@ import { generateFigurePool, getShapeCells } from './gameShapes';
 import { useAudio } from './hooks/useAudio';
 import { initYandexSdk, loadCloudBest, saveCloudBest } from './yandexSdk';
 import {
+  BOARD_SIZE,
   Board,
   Figure,
   GameScreen,
@@ -184,6 +185,66 @@ export function useGameLogic() {
   }, []);
 
   const canUndo = hasSnapshot && !isClearing;
+  // ── Revive after game over («второе дыхание») ──
+// Награда за рекламу: 3 новые фигуры + сжигание 3 линий подряд.
+// Направление (строки/столбцы) выбираем по тому, куда новые фигуры лучше влезают.
+const revive = useCallback((): boolean => {
+  if (isClearingRef.current) return false;
+  const currentBoard = boardRef.current;
+  // 1) Кидаем новые фигуры
+  const newPool = generateFigurePool(3);
+  // 2) Направление: сколько новых фигур влезает в коридор из 3 строк / 3 столбцов
+  const fitsRows = newPool.filter(f => f.matrix.length <= 3).length;
+  const fitsCols = newPool.filter(f => (f.matrix[0]?.length ?? 0) <= 3).length;
+  const useRows = fitsRows >= fitsCols;
+  // 3) В выбранном направлении — окно из 3 подряд линий с максимумом блоков
+  let bestStart = 0;
+  let bestCount = -1;
+  for (let start = 0; start <= BOARD_SIZE - 3; start++) {
+    let count = 0;
+    for (let i = start; i < start + 3; i++) {
+      for (let j = 0; j < BOARD_SIZE; j++) {
+        if (useRows ? currentBoard[i][j] : currentBoard[j][i]) count += 1;
+      }
+    }
+    if (count > bestCount) {
+      bestCount = count;
+      bestStart = start;
+    }
+  }
+  if (bestCount <= 0) return false; // жечь нечего — практически невозможно
+  const lines = [bestStart, bestStart + 1, bestStart + 2];
+  // 4) Отменяем таймеры, отключаем отмену (чтобы нельзя было «вернуть» сожжённое)
+  if (gameOverTimerRef.current) clearTimeout(gameOverTimerRef.current);
+  prevStateRef.current = null;
+  setHasSnapshot(false);
+  setLastScore(0);
+  setComboText(null);
+  // 5) Новые фигуры сразу в лоток
+  poolRef.current = newPool;
+  setPool(newPool);
+  // 6) Сжигаем с той же анимацией, что и обычные линии
+  setClearingCells(useRows
+    ? { rows: new Set(lines), cols: new Set() }
+    : { rows: new Set(), cols: new Set(lines) });
+  setIsClearing(true);
+  isClearingRef.current = true;
+  setScreen('game');
+  if (clearTimerRef.current) clearTimeout(clearTimerRef.current);
+  clearTimerRef.current = setTimeout(() => {
+    const clearedBoard = useRows
+      ? clearLines(currentBoard, lines, [])
+      : clearLines(currentBoard, [], lines);
+    boardRef.current = clearedBoard;
+    setClearingCells({ rows: new Set(), cols: new Set() });
+    setIsClearing(false);
+    isClearingRef.current = false;
+    setBoard(clearedBoard);
+    // Если ходов всё равно нет — снова игра окончена
+    checkGameOver(clearedBoard, newPool);
+  }, TIMING.CLEAR_ANIM_MS);
+  return true;
+}, [checkGameOver]);
 
   // ── Place a figure ──
   const placeFigure = useCallback((
@@ -291,6 +352,7 @@ export function useGameLogic() {
     placeFigure,
     toggleMute,
     undo,
+    revive,
     setScreen,
     playPlace,
   };

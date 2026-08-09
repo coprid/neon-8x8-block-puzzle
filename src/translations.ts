@@ -21,6 +21,7 @@ export const translations = {
     language: 'Language',
     close: 'Close',
     volume: 'Volume',
+    revive: '▶ AD: −3 LINES + NEW PIECES',
   },
   ru: {
     play: '▶ ИГРАТЬ',
@@ -44,6 +45,7 @@ export const translations = {
     language: 'Язык',
     close: 'Закрыть',
     volume: 'ГРОМКОСТЬ',
+    revive: '▶ РЕКЛАМА: −3 РЯДА + СМЕНА',
   },
 } as const;
 

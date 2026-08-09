@@ -95,3 +95,26 @@ export function showInterstitialAd() {
     window.dispatchEvent(new Event('chroma-ad-close'));
   }
 }
+// Реклама за вознаграждение («второе дыхание»).
+// Вне Яндекса выдаёт награду сразу — чтобы кнопку можно было потестить локально.
+export function showRewardedAd(onReward: () => void) {
+  try {
+    if (!sdk?.adv?.showRewardedVideo) { onReward(); return; }
+    let rewarded = false;
+    window.dispatchEvent(new Event('chroma-ad-open'));
+    sdk.adv.showRewardedVideo({
+      callbacks: {
+        onRewarded: () => { rewarded = true; },
+        onClose: () => {
+          window.dispatchEvent(new Event('chroma-ad-close'));
+          if (rewarded) onReward();
+        },
+        onError: () => {
+          window.dispatchEvent(new Event('chroma-ad-close'));
+        },
+      },
+    });
+  } catch {
+    window.dispatchEvent(new Event('chroma-ad-close'));
+  }
+}

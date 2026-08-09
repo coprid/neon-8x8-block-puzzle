@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useGameLogic } from './useGameLogic';
-import { showInterstitialAd } from './yandexSdk';
+import { showInterstitialAd, showRewardedAd } from './yandexSdk';
 import { initYandexSdk, notifyGameReady } from './yandexSdk';
 import MenuScreen from './components/MenuScreen';
 import GameScreen from './components/GameScreen';
@@ -68,6 +68,7 @@ export default function App() {
     placeFigure,
     toggleMute,
     undo,
+    revive,
     setScreen,
     playPlace,
   } = useGameLogic();
@@ -175,6 +176,7 @@ export default function App() {
                 best={best}
                 onReplay={handleReplay}
                 onMenu={() => setScreen('menu')}
+                onRevive={() => showRewardedAd(revive)}
               />
             )}
           </>
