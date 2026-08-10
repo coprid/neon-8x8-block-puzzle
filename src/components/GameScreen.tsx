@@ -56,7 +56,7 @@ export default function GameScreen({
       const h = el.clientHeight;
       const isCompact = h < 700;
       // Вертикальный бюджет «всё, кроме поля» — должен совпадать со стилями ниже
-      const chrome = isCompact ? 300 : 354;
+      const chrome = isCompact ? 300 : 404;
       const sidePad = isCompact ? 24 : 40;
       const fromW = Math.floor((Math.min(w, 480) - sidePad) / BOARD_SIZE);
       const fromH = Math.floor((h - chrome) / BOARD_SIZE);
